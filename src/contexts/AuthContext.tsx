@@ -113,6 +113,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isAuthenticated = !!user && !!token;
 
+  const hasRole = (role: string): boolean => {
+    if (!user?.roles) return false;
+    return user.roles.some(userRole => userRole.name === role);
+  };
+
+  const getUserRole = (): string | null => {
+    if (!user?.roles || user.roles.length === 0) return null;
+    
+    // Return highest privilege role (admin > manager > user)
+    if (hasRole('admin')) return 'admin';
+    if (hasRole('manager')) return 'manager';
+    if (hasRole('user')) return 'user';
+    
+    return user.roles[0].name;
+  };
+
+  const getDefaultRoute = (): string => {
+    const role = getUserRole();
+    switch (role) {
+      case 'admin':
+        return '/admin';
+      case 'manager':
+        return '/manager';
+      case 'user':
+        return '/dashboard';
+      default:
+        return '/dashboard';
+    }
+  };
+
   const value: AuthContextType = {
     user,
     token,
@@ -120,6 +150,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
+    hasRole,
+    getUserRole,
+    getDefaultRoute,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

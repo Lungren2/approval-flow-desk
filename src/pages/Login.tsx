@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Login = () => {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, isAuthenticated, isLoading, getDefaultRoute } = useAuth();
   const location = useLocation();
   const [credentials, setCredentials] = useState({
     username: '',
@@ -17,7 +17,8 @@ const Login = () => {
 
   // Redirect if already authenticated
   if (isAuthenticated) {
-    const from = location.state?.from?.pathname || '/';
+    const { getDefaultRoute } = useAuth();
+    const from = location.state?.from?.pathname || getDefaultRoute();
     return <Navigate to={from} replace />;
   }
 

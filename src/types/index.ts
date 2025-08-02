@@ -133,4 +133,7 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
+  hasRole: (role: string) => boolean;
+  getUserRole: () => string | null;
+  getDefaultRoute: () => string;
 }
