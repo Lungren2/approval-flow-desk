@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, AuthContextType, LoginCredentials } from '@/types';
+import { User, AuthContextType, LoginCredentials, LoginResponse, UserProfile } from '@/types';
 import { api, endpoints } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = async () => {
     try {
-      const response = await api.get<User>(endpoints.me);
+      const response = await api.get<User>(endpoints.userMe);
       if (response.success && response.data) {
         setUser(response.data);
         localStorage.setItem('auth_user', JSON.stringify(response.data));
@@ -65,23 +65,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginCredentials): Promise<void> => {
     try {
       setIsLoading(true);
-      const response = await api.post<{ user: User; token: string; expires_at: string }>(
+      
+      // WordPress JWT login
+      const response = await api.post<LoginResponse['data']>(
         endpoints.login,
         credentials
       );
 
       if (response.success && response.data) {
-        const { user: userData, token: authToken } = response.data;
+        const { token, refresh_token, user_display_name } = response.data;
         
-        setUser(userData);
-        setToken(authToken);
+        setToken(token);
+        localStorage.setItem('auth_token', token);
         
-        localStorage.setItem('auth_token', authToken);
-        localStorage.setItem('auth_user', JSON.stringify(userData));
+        if (refresh_token) {
+          localStorage.setItem('refresh_token', refresh_token);
+        }
+
+        // Fetch complete user profile
+        await fetchUserProfile();
 
         toast({
           title: 'Login successful',
-          description: `Welcome back, ${userData.display_name}!`,
+          description: `Welcome back, ${user_display_name}!`,
         });
       } else {
         throw new Error(response.message || 'Login failed');
@@ -99,11 +105,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const fetchUserProfile = async (): Promise<void> => {
+    try {
+      const response = await api.get<User>(endpoints.userMe);
+      if (response.success && response.data) {
+        setUser(response.data);
+        localStorage.setItem('auth_user', JSON.stringify(response.data));
+      } else {
+        logout();
+      }
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      logout();
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('refresh_token');
     
     toast({
       title: 'Logged out',
@@ -111,11 +133,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     });
   };
 
+  const refreshTokenMethod = async (): Promise<void> => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      // Use the api client's built-in refresh method
+      await api.refreshToken();
+      
+      // Update local token state
+      const newToken = localStorage.getItem('auth_token');
+      if (newToken) {
+        setToken(newToken);
+      } else {
+        throw new Error('Token refresh failed');
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      logout();
+      throw error;
+    }
+  };
+
   const isAuthenticated = !!user && !!token;
 
   const hasRole = (role: string): boolean => {
     if (!user?.roles) return false;
     return user.roles.some(userRole => userRole.name === role);
+  };
+
+  const hasCapability = (capability: string): boolean => {
+    if (!user?.capabilities) return false;
+    return user.capabilities.includes(capability);
+  };
+
+  const hasProfile = (profileName: string): boolean => {
+    if (!user?.profiles) return false;
+    return user.profiles.some(profile => profile.name === profileName);
+  };
+
+  const getUserProfiles = (): UserProfile[] => {
+    return user?.profiles || [];
   };
 
   const getUserRole = (): string | null => {
@@ -151,8 +211,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     hasRole,
+    hasCapability,
+    hasProfile,
     getUserRole,
+    getUserProfiles,
     getDefaultRoute,
+    refreshToken: refreshTokenMethod,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
