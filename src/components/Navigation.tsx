@@ -50,14 +50,14 @@ const Navigation: React.FC = () => {
         roles: ['admin'],
       },
       {
-        label: 'User Management',
+        label: 'Users',
         href: '/admin/users',
         icon: Users,
         roles: ['admin'],
       },
       {
-        label: 'System Settings',
-        href: '/admin/settings',
+        label: 'Profiles',
+        href: '/admin/profiles',
         icon: Settings,
         roles: ['admin'],
       },
@@ -66,15 +66,15 @@ const Navigation: React.FC = () => {
     // Manager items
     ...(hasRole('manager') || hasRole('admin') ? [
       {
-        label: 'Manager Dashboard',
-        href: '/manager',
-        icon: BarChart3,
+        label: 'Pending Approvals',
+        href: '/approvals/pending',
+        icon: FileCheck,
         roles: ['manager', 'admin'],
       },
       {
-        label: 'Pending Approvals',
-        href: '/manager/approvals',
-        icon: FileCheck,
+        label: 'Completed Approvals',
+        href: '/approvals/completed',
+        icon: List,
         roles: ['manager', 'admin'],
       },
     ] : []),
@@ -87,14 +87,14 @@ const Navigation: React.FC = () => {
       roles: ['user', 'manager', 'admin'],
     },
     {
-      label: 'New Request',
-      href: '/requests/new',
+      label: 'Submit Request',
+      href: '/submit',
       icon: Plus,
       roles: ['user', 'manager', 'admin'],
     },
     {
       label: 'My Requests',
-      href: '/requests',
+      href: '/my-requests',
       icon: List,
       roles: ['user', 'manager', 'admin'],
     },

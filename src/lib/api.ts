@@ -131,32 +131,36 @@ export const api = new ApiClient();
 
 // API endpoint helpers
 export const endpoints = {
-  // WordPress JWT Auth
-  login: `${JWT_AUTH_BASE}/token`,
-  refresh: `${JWT_AUTH_BASE}/token/refresh`,
-  validate: `${JWT_AUTH_BASE}/token/validate`,
-  me: `${PLUGIN_BASE}/auth/me`,
+  // Authentication & User Info
+  login: `${PLUGIN_BASE}/login`,
+  userMe: `${PLUGIN_BASE}/user/me`,
+  user: (id: number) => `${PLUGIN_BASE}/user/${id}`,
 
-  // Users
-  users: `${PLUGIN_BASE}/users`,
-  userProfiles: (userId: number) => `${PLUGIN_BASE}/users/${userId}/profiles`,
+  // Approvals (Request Lifecycle)
+  approvals: `${PLUGIN_BASE}/approvals`,
+  approval: (id: number) => `${PLUGIN_BASE}/approvals/${id}`,
+  approveApproval: (id: number) => `${PLUGIN_BASE}/approvals/${id}/approve`,
+  cancelApproval: (id: number) => `${PLUGIN_BASE}/approvals/${id}/cancel`,
+  grantEditApproval: (id: number) => `${PLUGIN_BASE}/approvals/${id}/grant-edit`,
+  resubmitApproval: (id: number) => `${PLUGIN_BASE}/approvals/${id}/resubmit`,
+  restoreApproval: (id: number) => `${PLUGIN_BASE}/approvals/${id}/restore`,
+  archiveApprovals: `${PLUGIN_BASE}/approvals/archive`,
 
-  // Approval Requests
-  requests: `${PLUGIN_BASE}/requests`,
-  myRequests: `${PLUGIN_BASE}/requests/my`,
-  pendingApprovals: `${PLUGIN_BASE}/approvals/pending`,
-  submitRequest: `${PLUGIN_BASE}/requests/submit`,
-  approveRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/approve`,
-  rejectRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/reject`,
-  cancelRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/cancel`,
-  delegateRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/delegate`,
+  // Reference Data (Scoped by Profile)
+  refCompanies: `${PLUGIN_BASE}/ref/companies`,
+  refBranches: `${PLUGIN_BASE}/ref/branches`,
+  refDepartments: `${PLUGIN_BASE}/ref/departments`,
+  refCategories: `${PLUGIN_BASE}/ref/categories`,
+  refSuppliers: `${PLUGIN_BASE}/ref/suppliers`,
+  refProjects: `${PLUGIN_BASE}/ref/projects`,
+  refRequesters: `${PLUGIN_BASE}/ref/requesters`,
+  refPaymentMethods: `${PLUGIN_BASE}/ref/payment-methods`,
+  refApprovalStatuses: `${PLUGIN_BASE}/ref/approval-statuses`,
 
-  // Reference data
-  companies: `${PLUGIN_BASE}/reference/companies`,
-  departments: `${PLUGIN_BASE}/reference/departments`,
-  profiles: `${PLUGIN_BASE}/reference/profiles`,
-  managers: `${PLUGIN_BASE}/reference/managers`,
+  // Profile Assignment
+  assignProfile: `${PLUGIN_BASE}/profiles/assign`,
+  revokeProfile: `${PLUGIN_BASE}/profiles/revoke`,
 
-  // History
-  requestHistory: (id: number) => `${PLUGIN_BASE}/requests/${id}/history`,
+  // Order Number Validation (WooCommerce Checkout)
+  validateOrder: `${PLUGIN_BASE}/validate-order`,
 } as const;

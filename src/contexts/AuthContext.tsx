@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const verifyToken = async () => {
     try {
-      const response = await api.get<User>(endpoints.me);
+      const response = await api.get<User>(endpoints.userMe);
       if (response.success && response.data) {
         setUser(response.data);
         localStorage.setItem('auth_user', JSON.stringify(response.data));
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async (): Promise<void> => {
     try {
-      const response = await api.get<User>(endpoints.me);
+      const response = await api.get<User>(endpoints.userMe);
       if (response.success && response.data) {
         setUser(response.data);
         localStorage.setItem('auth_user', JSON.stringify(response.data));
@@ -140,19 +140,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await api.post<{ token: string; refresh_token?: string }>(
-        endpoints.refresh,
-        { refresh_token: refreshToken }
-      );
-
-      if (response.success && response.data) {
-        const { token, refresh_token } = response.data;
-        setToken(token);
-        localStorage.setItem('auth_token', token);
-        
-        if (refresh_token) {
-          localStorage.setItem('refresh_token', refresh_token);
-        }
+      // Use the api client's built-in refresh method
+      await api.refreshToken();
+      
+      // Update local token state
+      const newToken = localStorage.getItem('auth_token');
+      if (newToken) {
+        setToken(newToken);
       } else {
         throw new Error('Token refresh failed');
       }
