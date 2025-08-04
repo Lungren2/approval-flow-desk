@@ -2,7 +2,9 @@ import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import { ApiResponse, PaginatedResponse } from '@/types';
 
 // Base API configuration
-const BASE_URL = 'https://www.stmtest.winningformgroup.co.za/wp-json/approval-plugin/v1';
+const BASE_URL = 'https://www.stmtest.winningformgroup.co.za/wp-json';
+const PLUGIN_BASE = '/approval-plugin/v1';
+const JWT_AUTH_BASE = '/jwt-auth/v1';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -30,16 +32,67 @@ class ApiClient {
     // Response interceptor for error handling
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Token expired or invalid - redirect to login
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
-          window.location.href = '/login';
+      async (error) => {
+        const originalRequest = error.config;
+        
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+          
+          try {
+            // Try to refresh token
+            await this.refreshToken();
+            // Retry original request with new token
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return this.client(originalRequest);
+            }
+          } catch (refreshError) {
+            // Refresh failed - logout user
+            this.logout();
+          }
         }
+        
+        if (error.response?.status === 401) {
+          this.logout();
+        }
+        
         return Promise.reject(error);
       }
     );
+  }
+
+  private logout() {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    localStorage.removeItem('refresh_token');
+    window.location.href = '/login';
+  }
+
+  async refreshToken(): Promise<void> {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      const response = await axios.post(`${BASE_URL}${JWT_AUTH_BASE}/token/refresh`, {
+        refresh_token: refreshToken
+      });
+
+      if (response.data.success && response.data.data) {
+        const { token, refresh_token } = response.data.data;
+        localStorage.setItem('auth_token', token);
+        if (refresh_token) {
+          localStorage.setItem('refresh_token', refresh_token);
+        }
+      } else {
+        throw new Error('Token refresh failed');
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw error;
+    }
   }
 
   // Generic API methods
@@ -78,31 +131,32 @@ export const api = new ApiClient();
 
 // API endpoint helpers
 export const endpoints = {
-  // Auth
-  login: '/auth/login',
-  refresh: '/auth/refresh',
-  me: '/auth/me',
+  // WordPress JWT Auth
+  login: `${JWT_AUTH_BASE}/token`,
+  refresh: `${JWT_AUTH_BASE}/token/refresh`,
+  validate: `${JWT_AUTH_BASE}/token/validate`,
+  me: `${PLUGIN_BASE}/auth/me`,
 
   // Users
-  users: '/users',
-  userProfiles: (userId: number) => `/users/${userId}/profiles`,
+  users: `${PLUGIN_BASE}/users`,
+  userProfiles: (userId: number) => `${PLUGIN_BASE}/users/${userId}/profiles`,
 
   // Approval Requests
-  requests: '/requests',
-  myRequests: '/requests/my',
-  pendingApprovals: '/approvals/pending',
-  submitRequest: '/requests/submit',
-  approveRequest: (id: number) => `/requests/${id}/approve`,
-  rejectRequest: (id: number) => `/requests/${id}/reject`,
-  cancelRequest: (id: number) => `/requests/${id}/cancel`,
-  delegateRequest: (id: number) => `/requests/${id}/delegate`,
+  requests: `${PLUGIN_BASE}/requests`,
+  myRequests: `${PLUGIN_BASE}/requests/my`,
+  pendingApprovals: `${PLUGIN_BASE}/approvals/pending`,
+  submitRequest: `${PLUGIN_BASE}/requests/submit`,
+  approveRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/approve`,
+  rejectRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/reject`,
+  cancelRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/cancel`,
+  delegateRequest: (id: number) => `${PLUGIN_BASE}/requests/${id}/delegate`,
 
   // Reference data
-  companies: '/reference/companies',
-  departments: '/reference/departments',
-  profiles: '/reference/profiles',
-  managers: '/reference/managers',
+  companies: `${PLUGIN_BASE}/reference/companies`,
+  departments: `${PLUGIN_BASE}/reference/departments`,
+  profiles: `${PLUGIN_BASE}/reference/profiles`,
+  managers: `${PLUGIN_BASE}/reference/managers`,
 
   // History
-  requestHistory: (id: number) => `/requests/${id}/history`,
+  requestHistory: (id: number) => `${PLUGIN_BASE}/requests/${id}/history`,
 } as const;

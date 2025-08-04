@@ -2,11 +2,15 @@
 
 export interface User {
   id: number;
-  wordpress_id: number;
+  username: string;
   email: string;
   display_name: string;
+  first_name?: string;
+  last_name?: string;
   roles: UserRole[];
   profiles: UserProfile[];
+  capabilities: string[];
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +25,7 @@ export interface UserProfile {
   id: number;
   user_id: number;
   profile_id: number;
+  name: string;
   profile_name: string;
   department_id?: number;
   company_id?: number;
@@ -104,6 +109,20 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 export interface LoginCredentials {
   username: string;
   password: string;
+  remember_me?: boolean;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  data: {
+    token: string;
+    refresh_token?: string;
+    user_email: string;
+    user_nicename: string;
+    user_display_name: string;
+    expires_at: string;
+  };
+  message?: string;
 }
 
 export interface CreateRequestForm {
@@ -134,6 +153,10 @@ export interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => void;
   hasRole: (role: string) => boolean;
+  hasCapability: (capability: string) => boolean;
+  hasProfile: (profileName: string) => boolean;
   getUserRole: () => string | null;
+  getUserProfiles: () => UserProfile[];
   getDefaultRoute: () => string;
+  refreshToken: () => Promise<void>;
 }
