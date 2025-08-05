@@ -70,10 +70,12 @@ export interface ApprovalRequest {
   approver_id?: number;
   approver_name?: string;
   approval_notes?: string;
+  order_number?: string;
   submitted_at: string;
   approved_at?: string;
   created_at: string;
   updated_at: string;
+  history?: ApprovalHistory[];
 }
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'needs_revision';
@@ -127,9 +129,22 @@ export interface LoginResponse {
 
 export interface CreateRequestForm {
   profile_id: number;
+  company_id?: number;
+  branch_id?: number;
+  department_id?: number;
+  category_id?: number;
+  supplier_id?: number;
+  project_id?: number;
   amount: number;
   description: string;
   supporting_docs?: File[];
+}
+
+export interface ReferenceData {
+  id: number;
+  name: string;
+  code?: string;
+  is_active: boolean;
 }
 
 export interface ApprovalActionForm {

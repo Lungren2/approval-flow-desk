@@ -9,6 +9,12 @@ export const loginSchema = z.object({
 // Create request form validation
 export const createRequestSchema = z.object({
   profile_id: z.number().min(1, 'Profile is required'),
+  company_id: z.number().optional(),
+  branch_id: z.number().optional(),
+  department_id: z.number().optional(),
+  category_id: z.number().optional(),
+  supplier_id: z.number().optional(),
+  project_id: z.number().optional(),
   amount: z.number().min(0.01, 'Amount must be greater than 0'),
   description: z.string().min(1, 'Description is required').max(1000, 'Description too long'),
   supporting_docs: z.array(z.instanceof(File)).optional(),
